@@ -1,0 +1,26 @@
+{
+  "weekOf": "2026-04-28",
+  "jobs": [
+    {
+      "title": "Pharmacist",
+      "company": "KUBA Hospital",
+      "location": "Lagos, Nigeria",
+      "deadline": "2026-05-15",
+      "type": "Full-time"
+    },
+    {
+      "title": "Nursing Assistant",
+      "company": "Castville Solutions",
+      "location": "Stadium Road, Rivers, Nigeria",
+      "deadline": "2026-04-24",
+      "type": "Full-Time"
+    },
+    {
+      "title": "WASH Specialist",
+      "company": "UNICEF",
+      "location": "Abidjan-Cote d\u2019Ivoire, Nigeria",
+      "deadline": "2026-04-30",
+      "type": "Full-Time"
+    }
+  ]
+}

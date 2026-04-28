@@ -1,46 +1,46 @@
+import "@fontsource/inter/400.css";
+import "@fontsource/inter/600.css";
+import "@fontsource/inter/700.css";
+import "@fontsource/inter/800.css";
+
 import { Composition } from "remotion";
-import { HelloWorld, myCompSchema } from "./HelloWorld";
-import { Logo, myCompSchema2 } from "./HelloWorld/Logo";
+import { z } from "zod";
+import weeklyJobs from "../public/weekly-jobs.json";
+import type { WeeklyJobs } from "./types";
+import { JobberMedReel, type JobberMedReelProps } from "./Video";
 
-// Each <Composition> is an entry in the sidebar!
+const jobSchema = z.object({
+  title: z.string(),
+  company: z.string(),
+  location: z.string(),
+  deadline: z.string(),
+  type: z.string(),
+});
 
-export const RemotionRoot: React.FC = () => {
+const weeklyJobsSchema = z.object({
+  weekOf: z.string(),
+  jobs: z.array(jobSchema),
+});
+
+const jobberMedReelSchema = z.object({
+  weeklyJobs: weeklyJobsSchema,
+});
+
+const weeklyJobsData = weeklyJobs as WeeklyJobs;
+
+export const RemotionRoot = () => {
   return (
-    <>
-      <Composition
-        // You can take the "id" to render a video:
-        // npx remotion render HelloWorld
-        id="HelloWorld"
-        component={HelloWorld}
-        durationInFrames={150}
-        fps={30}
-        width={1920}
-        height={1080}
-        // You can override these props for each render:
-        // https://www.remotion.dev/docs/parametrized-rendering
-        schema={myCompSchema}
-        defaultProps={{
-          titleText: "Welcome to Remotion",
-          titleColor: "#000000",
-          logoColor1: "#91EAE4",
-          logoColor2: "#86A8E7",
-        }}
-      />
-
-      {/* Mount any React component to make it show up in the sidebar and work on it individually! */}
-      <Composition
-        id="OnlyLogo"
-        component={Logo}
-        durationInFrames={150}
-        fps={30}
-        width={1920}
-        height={1080}
-        schema={myCompSchema2}
-        defaultProps={{
-          logoColor1: "#91dAE2" as const,
-          logoColor2: "#86A8E7" as const,
-        }}
-      />
-    </>
+    <Composition<typeof jobberMedReelSchema, JobberMedReelProps>
+      id="JobberMedReel"
+      component={JobberMedReel}
+      durationInFrames={1350}
+      fps={30}
+      width={1080}
+      height={1920}
+      schema={jobberMedReelSchema}
+      defaultProps={{
+        weeklyJobs: weeklyJobsData,
+      }}
+    />
   );
 };

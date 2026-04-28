@@ -1,0 +1,100 @@
+name: Weekly JobberMed Reel
+
+on:
+  schedule:
+    - cron: "0 4 * * 3"
+      timezone: "Europe/London"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: weekly-jobbermed-reel
+  cancel-in-progress: false
+
+jobs:
+  build-and-send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      GMAIL_USER: ${{ secrets.GMAIL_USER }}
+      GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+      MAIL_TO: ${{ secrets.MAIL_TO }}
+      MAX_ATTACHMENT_MB: "18"
+      REEL_VIDEO_PATH: out/jobbermed-reel.mp4
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install Python dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Ensure Remotion browser is available
+        run: npx remotion browser ensure
+
+      - name: Ensure ffmpeg is available
+        run: |
+          if ! command -v ffmpeg >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y ffmpeg
+          fi
+
+      - name: Generate weekly jobs, script, and voiceover
+        run: python scripts/generate_reel_assets.py
+
+      - name: Render Remotion reel
+        run: npx remotion render src/index.ts JobberMedReel out/jobbermed-reel-raw.mp4
+
+      - name: Compress reel under email budget
+        run: |
+          mkdir -p out
+          ffmpeg -y -i out/jobbermed-reel-raw.mp4 \
+            -c:v libx264 -preset slow -b:v 2800k -maxrate 3200k -bufsize 6400k \
+            -pix_fmt yuv420p -movflags +faststart \
+            -c:a aac -b:a 96k \
+            out/jobbermed-reel.mp4
+
+      - name: Verify email attachment size
+        run: |
+          size_bytes=$(wc -c < out/jobbermed-reel.mp4)
+          max_bytes=$((18 * 1024 * 1024))
+          echo "Rendered file size: ${size_bytes} bytes"
+          if [ "$size_bytes" -gt "$max_bytes" ]; then
+            echo "Video is larger than 18MB after compression"
+            exit 1
+          fi
+
+      - name: Send reel by Gmail
+        run: python scripts/send_reel_email.py
+
+      - name: Upload generated reel artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-jobbermed-reel
+          path: |
+            out/jobbermed-reel.mp4
+            out/jobbermed-reel-raw.mp4
+            public/weekly-jobs.json
+            public/voiceover.mp3
+            script.txt
+          if-no-files-found: ignore
+          retention-days: 14

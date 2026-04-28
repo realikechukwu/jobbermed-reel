@@ -6,6 +6,7 @@
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
+    "@fontsource/inter": "5.2.8",
     "@remotion/cli": "4.0.453",
     "@remotion/zod-types": "4.0.453",
     "react": "19.2.3",
