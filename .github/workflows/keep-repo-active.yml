@@ -1,0 +1,33 @@
+name: Keep Repository Active
+
+on:
+  schedule:
+    - cron: "23 17 1,15 * *"
+      timezone: "Europe/London"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: keep-repo-active
+  cancel-in-progress: false
+
+jobs:
+  heartbeat:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Commit heartbeat
+        run: |
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > .github/last-activity.txt
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add .github/last-activity.txt
+          git commit -m "chore: keep repository active [skip ci]" || exit 0
+          git push
